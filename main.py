@@ -1,4 +1,5 @@
 import discord
+import time
 from discord.ext import commands
 import logging
 
@@ -18,10 +19,69 @@ bot = commands.Bot(command_prefix='!', intents=intents)
 
 test_role = "test"
 
+times = {}
+
 @bot.event
 async  def on_ready():
     print(f"We are ready to go in, {bot.user.name}")
 
+#Gib Zeitformat zurück
+def fmt(seconds: float) -> str:
+    seconds = int(seconds)
+    h = seconds // 3600
+    m = (seconds % 3600) // 60
+    s = seconds % 60
+    if h:
+        return f"{h}:{m:02d}:{s:02d}"
+    return f"{m}:{s:02d}"
+
+#Gib gespeicherten Stempel Satus vom User aus times dictionary
+def get_state(user_id: int):
+    return times.get(user_id)
+
+#überprüft welcher status grad ist und passt die Zeit an
+def update_acc(state: dict):
+    now = time.monotonic()
+    a = now - state["late_ts"]
+    if state["mode"] == "work":
+        state["work_acc"] += a
+    else:
+        state["break_acc"] += a
+    state["last_ts"] = now
+
+#Command zum einstempeln
+@bot.command()
+async def ein(ctx):
+    if get_state(ctx.author.id):
+        await ctx.send(f"{ctx.author.mention} hat sich schon eingestempelt")
+        return
+
+    now = time.monotonic()
+    times[ctx.author.id] = {
+        "clock_in": now,
+        "work_acc": 0.0,
+        "break_acc": 0.0,
+        "mode": "work",
+        "last_ts": now
+    }
+    await ctx.send(f"{ctx.author.mention} eingestempelt")
+
+#command zur Pause einstempeln
+@bot.command()
+async def pause(ctx):
+    state =  get_state(ctx.author.id)
+    if not state:
+        await ctx.send(f"{ctx.author.mention} ist nicht eingestempelt")
+        return
+    if state["mode"] == "break":
+        await ctx.send(f"{ctx.author.mention} ist schon in der Pause")
+        return
+
+    update_acc(state)
+    state["mode"] = "break"
+    await ctx.send(f"{ctx.author.mention} ist in der Pause")
+
+""" #Sachen probiert
 @bot.event
 async def on_member_join(member):
     await member.send(f"Welcome to the server {member.name}")
@@ -84,6 +144,6 @@ async def secret(ctx):
 async def secret_error(ctx, error):
     if isinstance(error, commands.MissingRole):
         await ctx.send("Loser")
-
+"""
 
 bot.run(token, log_handler=handler, log_level=logging.DEBUG)
