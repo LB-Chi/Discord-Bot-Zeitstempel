@@ -21,6 +21,16 @@ test_role = "test"
 
 times = {}
 
+erlaubte_channel_id = 1478358032931885147
+
+#Discord bot soll nur in einem bestimmten Channel vom Server funktionieren
+@bot.event
+async def on_message(message):
+    if message.channel.id != erlaubte_channel_id:
+        return
+
+    await bot.process_commands(message)
+
 @bot.event
 async  def on_ready():
     print(f"We are ready to go in, {bot.user.name}")
@@ -42,7 +52,7 @@ def get_state(user_id: int):
 #überprüft welcher status grad ist und passt die Zeit an
 def update_acc(state: dict):
     now = time.monotonic()
-    a = now - state["late_ts"]
+    a = now - state["last_ts"]
     if state["mode"] == "work":
         state["work_acc"] += a
     else:
@@ -64,7 +74,7 @@ async def ein(ctx):
         "mode": "work",
         "last_ts": now
     }
-    await ctx.send(f"{ctx.author.mention} eingestempelt")
+    await ctx.send(f"{ctx.author.mention} is grinding for the bags")
 
 #command zur Pause einstempeln
 @bot.command()
@@ -74,12 +84,68 @@ async def pause(ctx):
         await ctx.send(f"{ctx.author.mention} ist nicht eingestempelt")
         return
     if state["mode"] == "break":
-        await ctx.send(f"{ctx.author.mention} ist schon in der Pause")
+        await ctx.send(f"{ctx.author.mention} ist immer noch am Arbeitszeitbetrug begehen")
         return
 
     update_acc(state)
     state["mode"] = "break"
-    await ctx.send(f"{ctx.author.mention} ist in der Pause")
+    await ctx.send(f"{ctx.author.mention} begeht Arbeitszeitbetrug, geh schuften")
+
+#command um die Pause zu beenden
+@bot.command()
+async def weiter(ctx):
+    state = get_state(ctx.author.id)
+    if not state:
+        await ctx.send(f"{ctx.author.mention} ist nicht eingestempelt")
+        return
+    if state["mode"] == "work":
+        await  ctx.send(f"{ctx.author.mention} ist noch am schuften")
+        return
+
+    update_acc(state)
+    state["mode"] = "work"
+    await ctx.send(f"{ctx.author.mention} ist weiter am husslen, Pause wurde beendet")
+
+#command um auszustempeln
+@bot.command()
+async def aus(ctx):
+    state = get_state(ctx.author.id)
+    if not state:
+        await ctx.send(f"{ctx.author.mention} ist nicht eingestempelt")
+        return
+
+    update_acc(state)
+    work = state["work_acc"]
+    brk = state["break_acc"]
+    total = work + brk
+
+    del times[ctx.author.id]
+
+    await ctx.send(
+        f"{ctx.author.mention} is god's sleepiest soldier\n"
+        f"Arbeitszeit: **{fmt(work)}**\n"
+        f"Pause: **{fmt(brk)}**\n"
+        f"Gesamtzeit: **{fmt(total)}**"
+    )
+
+#command um sich auszustempeln
+@bot.command()
+async def status(ctx):
+    state = get_state(ctx.author.id)
+    if not state:
+        await ctx.send(f"{ctx.author.mention} ist nicht eingestempelt")
+        return
+
+    now = time.monotonic()
+    a = now - state["last_ts"]
+    work = state["work_acc"] + (a if state["mode"] == "work" else 0.0)
+    brk = state["break_acc"] + (a if state["mode"] == "break" else 0.0)
+
+    mode_txt = "Arbeit" if state["mode"] == "work" else "Pause"
+    await ctx.send(
+        f"Status für {ctx.author.mention}: {mode_txt}\n"
+        f"Arbeitszeit: **{fmt(work)}** | Pause: **{fmt(brk)}**"
+    )
 
 """ #Sachen probiert
 @bot.event
