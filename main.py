@@ -21,7 +21,7 @@ test_role = "test"
 
 times = {}
 
-erlaubte_channel_id = 1478358032931885147
+erlaubte_channel_id = 1456926115020148810
 
 #Discord bot soll nur in einem bestimmten Channel vom Server funktionieren
 @bot.event
