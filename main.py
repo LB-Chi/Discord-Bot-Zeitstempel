@@ -63,7 +63,8 @@ def update_acc(state: dict):
 @bot.command()
 async def ein(ctx):
     if get_state(ctx.author.id):
-        await ctx.send(f"{ctx.author.mention} hat sich schon eingestempelt")
+        await ctx.send(f"{ctx.author.mention} du bastard, falscher command, aber alles gut i fix that, keep hustlin")
+        await weiter(ctx.author.id)
         return
 
     now = time.monotonic()
