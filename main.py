@@ -64,7 +64,7 @@ def update_acc(state: dict):
 async def ein(ctx):
     if get_state(ctx.author.id):
         await ctx.send(f"{ctx.author.mention} du bastard, falscher command, aber alles gut i fix that, keep hustlin")
-        await weiter(ctx.author.id)
+        await weiter(ctx)
         return
 
     now = time.monotonic()
@@ -100,7 +100,7 @@ async def weiter(ctx):
         await ctx.send(f"{ctx.author.mention} ist nicht eingestempelt")
         return
     if state["mode"] == "work":
-        await  ctx.send(f"{ctx.author.mention} ist noch am schuften")
+        await ctx.send(f"{ctx.author.mention} ist noch am schuften")
         return
 
     update_acc(state)
